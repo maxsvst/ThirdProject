@@ -1,0 +1,1 @@
+export const weatherDataStyle = "font-sans font-normal text-4xl inline-block mt-4"
