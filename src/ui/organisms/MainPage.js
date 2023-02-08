@@ -32,7 +32,7 @@ export default function MainPage() {
   }, []);
 
   const fetchData = async () => {
-    const position = await getPosition().catch(error => {
+    const position = await getPosition().catch((error) => {
       console.error(error.message);
     });
 
@@ -84,12 +84,16 @@ export default function MainPage() {
 
   const addCityToSavedCityList = () => {
     const isLocationAlreadyExists = savedLocations.filter(
-      (item) => item.label === location
+      (item) => item.label === currentCity
     );
-    if (isLocationAlreadyExists.length === 0 && location !== undefined) {
+    if (
+      isLocationAlreadyExists.length === 0 &&
+      currentCity !== undefined &&
+      currentCity !== ""
+    ) {
       setSavedLocations([
         ...savedLocations,
-        { value: savedLocations.length + 1, label: location },
+        { value: savedLocations.length + 1, label: currentCity },
       ]);
     }
   };
