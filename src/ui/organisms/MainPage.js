@@ -9,7 +9,7 @@ import {
   weatherUrl,
   coordsUrl,
   appId,
-  getCurrentPosition,
+  getPosition,
   palableTemperature,
   sunriseTime,
   sunsetTime,
@@ -28,9 +28,15 @@ export default function MainPage() {
   const currentCity = data?.name;
 
   useEffect(() => {
-    const fetchData = async () => {
-      const position = await getCurrentPosition();
+    fetchData();
+  }, []);
 
+  const fetchData = async () => {
+    const position = await getPosition().catch(error => {
+      console.error(error.message);
+    });
+
+    if (position) {
       const data = {
         lat: position.coords.latitude,
         lon: position.coords.longitude,
@@ -42,9 +48,8 @@ export default function MainPage() {
         .then((resp) => resp.data[0]);
       getWeatherData(location.name);
       setLocation(location.name);
-    };
-    fetchData();
-  }, []);
+    }
+  };
 
   const getWeatherData = (city) => {
     const weatherData = {
@@ -55,14 +60,20 @@ export default function MainPage() {
 
     axios
       .get(weatherUrl, { params: weatherData })
-      .then((response) => setData(response.data));
+      .then((response) => setData(response.data))
+      .catch((error) => {
+        console.error(error.response.data.message);
+      });
   };
 
   const searchLocation = (e) => {
-    if (e.key === "Enter" && e.target.value !== "") {
-      axios.get(getWeatherData(e.target.value)).then((response) => {
-        setData(response.data);
-      });
+    if (
+      e.key === "Enter" &&
+      e.target.value !== "" &&
+      e.target.value !== undefined
+    ) {
+      const city = e.target.value;
+      getWeatherData(city);
     }
   };
 
@@ -75,7 +86,7 @@ export default function MainPage() {
     const isLocationAlreadyExists = savedLocations.filter(
       (item) => item.label === location
     );
-    if (isLocationAlreadyExists.length === 0 && location !== "") {
+    if (isLocationAlreadyExists.length === 0 && location !== undefined) {
       setSavedLocations([
         ...savedLocations,
         { value: savedLocations.length + 1, label: location },

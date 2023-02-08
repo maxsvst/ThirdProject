@@ -13,9 +13,3 @@
   font-weight: 400;
   src: url(./../fonts/Montserrat-Regular.ttf);
 }
-
-*{
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
