@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 
-import { MenuItem, Menu, Button, Input } from "@mui/material";
-import PopupState, { bindTrigger, bindMenu } from "material-ui-popup-state";
+import { Input } from "@mui/material";
 
 import axios from "axios";
 
@@ -10,28 +9,55 @@ import {
   coordsUrl,
   appId,
   getPosition,
-  palableTemperature,
+  palpableTemperature,
   sunriseTime,
   sunsetTime,
+  localStorageSavedLocations,
+  updateLocalStorageSavedLocations,
+  updateLocalStorageOptions,
+  localStorageOptions,
 } from "../../heplers/common";
+import { SavedCities } from "../molecules/SavedCities";
+import { Settings } from "../molecules/Settings";
 import WeatherData from "../molecules/WeatherData";
 import CurrentCity from "../molecules/CurrentCity";
 
 export default function MainPage() {
-  const [location, setLocation] = useState();
   const [data, setData] = useState({});
-  const [savedLocations, setSavedLocations] = useState([]);
-  const [showPalpableTemperature, setShowPalpableTemperature] = useState(false);
-  const [showSunriseTime, setShowSunriseTime] = useState(false);
-  const [showSunsetTime, setShowSunsetTime] = useState(false);
+  const [savedLocations, setSavedLocations] = useState(
+    localStorageSavedLocations ? localStorageSavedLocations : []
+  );
+  const [showPalpableTemperature, setShowPalpableTemperature] = useState(() => {
+    return localStorageOptions
+      ? localStorageOptions.palpableTemperatureStorage
+      : false;
+  });
+  const [showSunriseTime, setShowSunriseTime] = useState(() => {
+    return localStorageOptions ? localStorageOptions.sunriseTimeStorage : false;
+  });
+  const [showSunsetTime, setShowSunsetTime] = useState(() => {
+    return localStorageOptions ? localStorageOptions.sunsetTimeStorage : false;
+  });
 
   const currentCity = data?.name;
+
+  useEffect(() => {
+    updateLocalStorageOptions(
+      showPalpableTemperature,
+      showSunriseTime,
+      showSunsetTime
+    );
+  }, [showPalpableTemperature, showSunriseTime, showSunsetTime]);
+
+  useEffect(() => {
+    updateLocalStorageSavedLocations(savedLocations);
+  }, [savedLocations]);
 
   useEffect(() => {
     fetchData();
   }, []);
 
-  const fetchData = async () => {
+  async function fetchData() {
     const position = await getPosition().catch((error) => {
       console.error(error.message);
     });
@@ -47,9 +73,8 @@ export default function MainPage() {
         .get(coordsUrl, { params: data })
         .then((resp) => resp.data[0]);
       getWeatherData(location.name);
-      setLocation(location.name);
     }
-  };
+  }
 
   const getWeatherData = (city) => {
     const weatherData = {
@@ -99,89 +124,38 @@ export default function MainPage() {
   };
 
   const onTogglePelpableTemperature = () =>
-    setShowPalpableTemperature(!showPalpableTemperature);
-  const onToggleSunriseTime = () => setShowSunriseTime(!showSunriseTime);
-  const onToggleSunsetTime = () => setShowSunsetTime(!showSunsetTime);
+    setShowPalpableTemperature(!showPalpableTemperature); 
+  const onToggleSunriseTime = () => setShowSunriseTime(!showSunriseTime); 
+  const onToggleSunsetTime = () => setShowSunsetTime(!showSunsetTime); 
 
   const isPalableTemperatureVisible = showPalpableTemperature
-    ? palableTemperature
+    ? palpableTemperature
     : "Ощутимая температура";
   const isSunriseTimeVisible = showSunriseTime ? sunriseTime : "Время восхода";
   const isSunsetTimeVisible = showSunsetTime ? sunsetTime : "Время заката";
 
-  const Settings = () => {
-    return (
-      <PopupState variant="popover" popupId="demo-popup-menu">
-        {(popupState) => (
-          <React.Fragment>
-            <Button variant="contained" {...bindTrigger(popupState)}>
-              Настройки
-            </Button>
-            <Menu {...bindMenu(popupState)}>
-              <MenuItem onClick={onTogglePelpableTemperature}>
-                {isPalableTemperatureVisible}
-              </MenuItem>
-              <MenuItem onClick={onToggleSunriseTime}>
-                {isSunriseTimeVisible}
-              </MenuItem>
-              <MenuItem onClick={onToggleSunsetTime}>
-                {isSunsetTimeVisible}
-              </MenuItem>
-            </Menu>
-          </React.Fragment>
-        )}
-      </PopupState>
-    );
-  };
-
-  const SavedCities = () => {
-    return (
-      <PopupState variant="popover" popupId="demo-popup-menu">
-        {(popupState) => (
-          <React.Fragment>
-            <Button variant="contained" {...bindTrigger(popupState)}>
-              Сохранённые города
-            </Button>
-            <Menu {...bindMenu(popupState)}>
-              {savedLocations.map((item) => {
-                return (
-                  <div key={item.value} className="flex flex-row">
-                    <MenuItem
-                      onClick={() => getWeatherData(item.label)}
-                      value={item.value}
-                    >
-                      {item.label}{" "}
-                    </MenuItem>
-                    <Button
-                      className="hover:text-[#E02424]"
-                      onClick={() => deleteFromSavedCityList(item.value)}
-                    >
-                      Х
-                    </Button>
-                  </div>
-                );
-              })}
-            </Menu>
-          </React.Fragment>
-        )}
-      </PopupState>
-    );
-  };
-
   return (
     <div className="mx-10 my-10 flex flex-col items-center">
       <div className="w-full flex items-center justify-evenly">
-        <Settings />
+        <Settings
+          onTogglePelpableTemperature={onTogglePelpableTemperature}
+          onToggleSunriseTime={onToggleSunriseTime}
+          onToggleSunsetTime={onToggleSunsetTime}
+          isPalableTemperatureVisible={isPalableTemperatureVisible}
+          isSunriseTimeVisible={isSunriseTimeVisible}
+          isSunsetTimeVisible={isSunsetTimeVisible}
+        />
         <Input
           className="min-w-[350px] "
           type="text"
           placeholder="Введите ваш город"
           onKeyPress={searchLocation}
-          onChange={(e) => {
-            setLocation(e.target.value);
-          }}
         />
-        <SavedCities />
+        <SavedCities
+          savedLocations={savedLocations}
+          getWeatherData={getWeatherData}
+          deleteFromSavedCityList={deleteFromSavedCityList}
+        />
       </div>
       <div className="flex flex-col items-center mt-20">
         <CurrentCity
